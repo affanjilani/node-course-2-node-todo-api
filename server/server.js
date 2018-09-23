@@ -1,50 +1,30 @@
-//load mongoose
-var mongoose = require('mongoose');
+var express = require('express');
+var bodyParser = require('body-parser');
 
-//want to use built in library
-mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/TodoApp');
-//maintaining connection over time
+var {mongoose} = require('./db/mongoose.js');
+var {Todo} = require('./models/todo');
+var {User} = require('./models/user');
 
-//save new something, this statement might run too quick but mongoose will take
-//care of it, we don't have to micro manage
+var app = express();
 
-//now connected
+//configure middleware
+app.use(bodyParser.json());
+//when creating resource, POST http message and send as body
+//send json object over to server, have text property, server gets property and
+//sends full model back
 
-//we must now create model. We can have differing objects in same collection
-//mongoose likes to organize it more and know exactly how the data is
-var Todo = mongoose.model('Todo', {
-	text: {	//tell mongoose exactly what text is, if its required, details
-		type: String
-	},
-	completed: {
-		type: Boolean
-	},
-	completedAt: {
-		type: Number
-	}
+app.post('/todos', (req, res) => {
+	var todo = new Todo({
+		text: req.body.text
+	});
+
+	todo.save().then((doc) => {
+		res.send(doc);	//response.send to send doc back
+	}, (e) => {
+		res.status(400).send(e);	//400 means bad request
+	});
 });
 
-//now create instance
-var newTodo = new Todo({
-	text: 'Cook dinner'
-});
-
-/*//this does not save to database
-newTodo.save().then((doc) => {
-	console.log('Saved todo', doc);
-}, (e) => {
-	console.log('Unable to save todo');
-});*/
-
-newTodo = new Todo({
-	text: 'Code something',
-	completed: true,
-	completedAt: 123
-});
-
-newTodo.save().then((doc) => {
-	console.log(JSON.stringify(doc, undefined, 2));
-}, (err) => {
-	console.log('Unable to save', e);
-});
+app.listen(3000, () => {
+	console.log('Started on port 3000');
+})
